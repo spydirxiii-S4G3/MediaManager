@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlexAnimeTools v2.0.0 - Complete Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 3px solid #667eea;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 60px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+        }
+
+        .command-card {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .command-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .command-name {
+            font-size: 1.4em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .command-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .command-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .command-btn:active {
+            transform: translateY(0);
+        }
+
+        .command-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.5;
+        }
+
+        .code-block code {
+            color: #68d391;
+        }
+
+        .param-list {
+            margin: 15px 0;
+        }
+
+        .param-item {
+            background: #f0f4f8;
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .param-name {
+            color: #764ba2;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-required {
+            background: #fc8181;
+            color: white;
+        }
+
+        .badge-optional {
+            background: #68d391;
+            color: white;
+        }
+
+        .badge-switch {
+            background: #4299e1;
+            color: white;
+        }
+
+        .example-box {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .example-title {
+            color: #c53030;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 4px solid #667eea;
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .warning-box {
+            background: #fffaf0;
+            border: 2px solid #f6ad55;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box::before {
+            content: "⚠️ ";
+            font-size: 1.5em;
+        }
+
+        .success-box {
+            background: #f0fff4;
+            border: 2px solid #68d391;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .success-box::before {
+            content: "✅ ";
+            font-size: 1.5em;
+        }
+
+        .info-box {
+            background: #ebf8ff;
+            border: 2px solid #4299e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box::before {
+            content: "ℹ️ ";
+            font-size: 1.5em;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .command-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .command-btn {
+                width: 100%;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .copy-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .toc a:hover {
+            color: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 PlexAnimeTools v2.0.0</h1>
+            <p>Complete PowerShell Media Organization Suite</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn" onclick="scrollToSection('overview')">Overview</button>
+            <button class="nav-btn" onclick="scrollToSection('commands')">Commands</button>
+            <button class="nav-btn" onclick="scrollToSection('gui')">GUI Features</button>
+            <button class="nav-btn" onclick="scrollToSection('config')">Configuration</button>
+            <button class="nav-btn" onclick="scrollToSection('examples')">Examples</button>
+            <button class="nav-btn" onclick="scrollToSection('troubleshooting')">Troubleshooting</button>
+        </div>
+
+        <div class="content">
+            <!-- OVERVIEW SECTION -->
+            <div id="overview" class="section">
+                <h2>📋 Overview</h2>
+                <p>PlexAnimeTools is a comprehensive PowerShell module for organizing anime, TV shows, cartoons, and movies for Plex Media Server. It automatically fetches metadata from MyAnimeList (Jikan API) and TMDb, renames files with proper episode titles, creates season folders, and downloads artwork.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <div class="feature-title">Automatic Detection</div>
+                        <p>Identifies anime, TV shows, cartoons, and movies automatically</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <div class="feature-title">API Integration</div>
+                        <p>Fetches metadata from Jikan (MAL) and TMDb</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <div class="feature-title">Smart Renaming</div>
+                        <p>Renames files with accurate episode titles</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📁</div>
+                        <div class="feature-title">Plex-Compatible</div>
+                        <p>Creates proper S01E01 folder structure</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🖼️</div>
+                        <div class="feature-title">Artwork Download</div>
+                        <p>Fetches and saves poster images</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👁️</div>
+                        <div class="feature-title">WhatIf Preview</div>
+                        <p>Visual preview window before making changes</p>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <strong>Quick Start:</strong> Run <code>.\Start-PlexAnimeTools.ps1</code> for an interactive launcher with GUI and CLI options!
+                </div>
+            </div>
+
+            <!-- MAIN COMMANDS SECTION -->
+            <div id="commands" class="section">
+                <h2>⚡ Main Commands</h2>
+
+                <!-- Invoke-AnimeOrganize -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Invoke-AnimeOrganize</span>
+                        <button class="command-btn" onclick="showCommandDetail('invoke-organize')">View Details</button>
+                    </div>
+                    <div class="command-description">
+                        Main function to organize media files. Processes folders, fetches metadata, renames files, creates season folders, and downloads artwork.
+                    </div>
+                    <div class="code-block">
+<code># Preview changes first (RECOMMENDED)
+Invoke-AnimeOrganize -Path "D:\Downloads\Anime" -OutputPath "D:\Plex\Anime" -WhatIf
+
+# Execute organization
+Invoke-AnimeOrganize -Path "D:\Downloads\Anime" -OutputPath "D:\Plex\Anime"</code>
+                    </div>
+                </div>
+
+                <!-- Get-AnimeInfo -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Get-AnimeInfo</span>
+                        <button class="command-btn" onclick="showCommandDetail('get-info')">View Details</button>
+                    </div>
+                    <div class="command-description">
+                        Retrieves detailed anime information from MyAnimeList via Jikan API including episodes, synopsis, scores, and metadata.
+                    </div>
+                    <div class="code-block">
+<code># Search by title
+Get-AnimeInfo -Title "Attack on Titan"
+
+# Get with episodes
+Get-AnimeInfo -Title "Naruto" -IncludeEpisodes</code>
+                    </div>
+                </div>
+
+                <!-- Test-PlexScan -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Test-PlexScan</span>
+                        <button class="command-btn" onclick="showCommandDetail('test-scan')">View Details</button>
+                    </div>
+                    <div class="command-description">
+                        Validates Plex compatibility of organized media. Checks folder structure, file naming, and artwork.
+                    </div>
+                    <div class="code-block">
+<code># Test single show
+Test-PlexScan -Path "D:\Plex\Anime\Attack on Titan"
+
+# Test with details
+Test-PlexScan -Path "D:\Plex\Anime\Naruto" -Detailed</code>
+                    </div>
+                </div>
+
+                <!-- Start-PlexGUI -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Start-PlexGUI</span>
+                        <button class="command-btn" onclick="showCommandDetail('start-gui')">View Details</button>
+                    </div>
+                    <div class="command-description">
+                        Launches a Windows Forms GUI for easy media organization with folder browsers and real-time output.
+                    </div>
+                    <div class="code-block">
+<code># Launch GUI
+Start-PlexGUI</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UTILITY COMMANDS -->
+            <div class="section">
+                <h2>🔧 Utility Commands</h2>
+
+                <!-- Show-LatestLog -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Show-LatestLog</span>
+                        <button class="command-btn" onclick="copyCommand('Show-LatestLog -Type Main')">Copy Command</button>
+                    </div>
+                    <div class="command-description">
+                        Opens the most recent log file in Notepad.
+                    </div>
+                    <div class="code-block">
+<code># View main application log
+Show-LatestLog -Type Main
+
+# View full console transcript
+Show-LatestLog -Type Transcript
+
+# View error report
+Show-LatestLog -Type Error</code>
+                    </div>
+                    <div class="param-list">
+                        <div class="param-item">
+                            <span class="param-name">-Type</span>
+                            <span class="badge badge-required">Required</span>
+                            <p>Log type to open: Main, Transcript, or Error</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Get-LatestLog -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Get-LatestLog</span>
+                        <button class="command-btn" onclick="copyCommand('Get-LatestLog -Type Main')">Copy Command</button>
+                    </div>
+                    <div class="command-description">
+                        Gets the path to the most recent log file without opening it.
+                    </div>
+                    <div class="code-block">
+<code># Get path to main log
+$logPath = Get-LatestLog -Type Main
+
+# Get all log files
+$allLogs = Get-LatestLog -Type All</code>
+                    </div>
+                </div>
+
+                <!-- Clear-OldLogs -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Clear-OldLogs</span>
+                        <button class="command-btn" onclick="copyCommand('Clear-OldLogs -Days 30')">Copy Command</button>
+                    </div>
+                    <div class="command-description">
+                        Removes log files older than specified number of days.
+                    </div>
+                    <div class="code-block">
+<code># Clean logs older than 30 days
+Clear-OldLogs -Days 30
+
+# Keep only last 7 days
+Clear-OldLogs -Days 7</code>
+                    </div>
+                </div>
+
+                <!-- Test-MALOfficialAPI -->
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Test-MALOfficialAPI</span>
+                        <button class="command-btn" onclick="copyCommand('Test-MALOfficialAPI')">Copy Command</button>
+                    </div>
+                    <div class="command-description">
+                        Tests if MAL Official API is configured and working properly.
+                    </div>
+                    <div class="code-block">
+<code># Test MAL Official API
+Test-MALOfficialAPI</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GUI FEATURES -->
+            <div id="gui" class="section">
+                <h2>🖥️ GUI Features</h2>
+                
+                <div class="info-box">
+                    The GUI provides an easy-to-use interface for all PlexAnimeTools features with folder browsers, real-time logs, and progress tracking.
+                </div>
+
+                <h3>GUI Components</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-title">Source/Destination Selection</div>
+                        <p>Browse and select folders with built-in folder browser dialogs</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Configuration Profiles</div>
+                        <p>Dropdown menu to select: default, plex-strict, or fansub-chaos</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Preview Mode</div>
+                        <p>Checkbox for WhatIf mode to safely preview changes</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Recursive Processing</div>
+                        <p>Option to process all subfolders automatically</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Real-Time Output</div>
+                        <p>Live log display showing all processing activity</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Progress Tracking</div>
+                        <p>Visual progress bar for batch operations</p>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">Launch GUI</span>
+                        <button class="command-btn" onclick="copyCommand('Start-PlexGUI')">Copy Command</button>
+                    </div>
+                    <div class="code-block">
+<code># Start the GUI
+Start-PlexGUI
+
+# Or use the launcher
+.\Start-PlexAnimeTools.ps1
+# Then select option 1</code>
+                    </div>
+                </div>
+
+                <h3>Built-in Tools</h3>
+                <div class="param-list">
+                    <div class="param-item">
+                        <span class="param-name">Anime Info</span>
+                        <p>Search and display detailed anime information from MyAnimeList</p>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-name">Test Plex</span>
+                        <p>Validate Plex library compatibility for organized media</p>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-name">View Logs</span>
+                        <p>Quick access to open the latest log file</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIGURATION -->
+            <div id="config" class="section">
+                <h2>⚙️ Configuration Profiles</h2>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">default.json</span>
+                    </div>
+                    <div class="command-description">
+                        Balanced settings for most users. Removes common fansub tags, uses English titles when available, standard Plex naming.
+                    </div>
+                    <div class="code-block">
+<code>Invoke-AnimeOrganize -Path "..." -OutputPath "..." -ConfigProfile default</code>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">plex-strict.json</span>
+                    </div>
+                    <div class="command-description">
+                        Maximum Plex compatibility. Strips ALL tags and quality markers, English titles only, minimal file extensions (mkv, mp4).
+                    </div>
+                    <div class="code-block">
+<code>Invoke-AnimeOrganize -Path "..." -OutputPath "..." -ConfigProfile plex-strict</code>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">fansub-chaos.json</span>
+                    </div>
+                    <div class="command-description">
+                        Preserves release group tags and quality information in filenames. Romaji titles preferred. Backs up original filenames.
+                    </div>
+                    <div class="code-block">
+<code>Invoke-AnimeOrganize -Path "..." -OutputPath "..." -ConfigProfile fansub-chaos</code>
+                    </div>
+                </div>
+
+                <h3>API Configuration</h3>
+                <div class="warning-box">
+                    <strong>TMDb API Key Required:</strong> Get a free API key from <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDb</a> and add it to your config file.
+                </div>
+
+                <div class="info-box">
+                    <strong>MAL Official API (Optional):</strong> For enhanced features, create a free MAL API application at <a href="https://myanimelist.net/apiconfig" target="_blank">MAL API Config</a>.
+                </div>
+            </div>
+
+            <!-- EXAMPLES -->
+            <div id="examples" class="section">
+                <h2>💡 Examples & Use Cases</h2>
+
+                <div class="example-box">
+                    <div class="example-title">Example 1: Preview Before Organizing</div>
+                    <div class="code-block">
+<code># ALWAYS preview first!
+Invoke-AnimeOrganize -Path "D:\Downloads\[SubsPlease] Attack on Titan" `
+    -OutputPath "D:\Plex\Anime" -WhatIf
+
+# Review the preview window, then proceed if satisfied
+# The preview shows every file rename and folder creation</code>
+                    </div>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">Example 2: Batch Process Multiple Shows</div>
+                    <div class="code-block">
+<code># Process all subfolders with preview
+Get-ChildItem "D:\Downloads\Anime" -Directory | 
+    Invoke-AnimeOrganize -OutputPath "D:\Plex\Anime" -WhatIf
+
+# Review all previews, then execute
+Get-ChildItem "D:\Downloads\Anime" -Directory | 
+    Invoke-AnimeOrganize -OutputPath "D:\Plex\Anime"</code>
+                    </div>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">Example 3: Get Anime Information</div>
+                    <div class="code-block">
+<code># Search for anime
+$info = Get-AnimeInfo -Title "Demon Slayer" -IncludeEpisodes
+
+# Export episode list
+$info.EpisodeList | Export-Csv "demon_slayer_episodes.csv"
+
+# View statistics
+$info | Select-Object Title, Episodes, Score, Status, Genres</code>
+                    </div>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">Example 4: Test Plex Library</div>
+                    <div class="code-block">
+<code># Test all shows in library
+Get-ChildItem "D:\Plex\Anime" -Directory | Test-PlexScan -Detailed
+
+# Find shows with issues
+Get-ChildItem "D:\Plex\Anime" -Directory | 
+    Test-PlexScan | 
+    Where-Object { $_.Score -lt 70 }</code>
+                    </div>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">Example 5: Force Content Type</div>
+                    <div class="code-block">
+<code># Force as anime (skip auto-detection)
+Invoke-AnimeOrganize -Path "D:\Downloads\Show" `
+    -OutputPath "D:\Plex" `
+    -ForceType Anime `
+    -WhatIf</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TROUBLESHOOTING -->
+            <div id="troubleshooting" class="section">
+                <h2>🔍 Troubleshooting</h2>
+
+                <h3>Common Issues</h3>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">No Results Found</span>
+                    </div>
+                    <div class="command-description">
+                        <ul>
+                            <li>Check folder name is recognizable (remove excessive tags)</li>
+                            <li>Try manual search: <code>Get-AnimeInfo -Title "Show Name"</code></li>
+                            <li>Verify internet connection for API access</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <div class="command-header">
+                        <span class="command-name">TMDb API Not Working</span>
+                    </div>
+                    <div class="command-description">
+                        <ul>
+                            <li>Ensure API key is in config file (not "YOUR_TMDB_API_KEY_HERE")</li>
+                            <li>Get free key from <a href="https://www.themoviedb.org/settings/api" target

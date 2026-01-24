@@ -1,0 +1,41 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260124113537
+Username: S4G3DESK\S4G3
+RunAs User: S4G3DESK\S4G3
+Configuration Name: 
+Machine: S4G3DESK (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command if((Get-ExecutionPolicy ) -ne 'AllSigned') { Set-ExecutionPolicy -Scope Process Bypass }; & 'C:\Users\desol\Desktop\PlexAnimeTools\Start-PlexAnimeTools.ps1'
+Process ID: 4792
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+PlexAnimeTools v2.0.0 loaded. Type 'Get-Command -Module PlexAnimeTools' to see available commands.
+Logs directory: C:\Users\desol\Desktop\PlexAnimeTools\Logs
+Active log: C:\Users\desol\Desktop\PlexAnimeTools\Logs\PlexAnimeTools_20260124_113537.log
+Transcript: C:\Users\desol\Desktop\PlexAnimeTools\Logs\Transcript_20260124_113537.log
+Module loaded successfully!
+
+
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘                                                               â•‘
+â•‘              PlexAnimeTools v2.0.0                            â•‘
+â•‘              Media Organization for Plex                      â•‘
+â•‘                                                               â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+  [1] Launch GUI (Graphical Interface)
+  [2] CLI Mode (Command Line)
+  [3] Quick Start Guide
+  [4] Test Plex Library
+  [5] Module Information
+  [6] View README
+  [0] Exit
+
+Select an option:
