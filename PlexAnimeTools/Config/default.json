@@ -1,0 +1,98 @@
+{
+  "TMDbAPIKey": "YOUR_TMDB_API_KEY_HERE",
+  "MALClientId": "YOUR_MAL_CLIENT_ID_HERE",
+  "JikanRateLimit": 500,
+  "TMDbRateLimit": 300,
+  "MALRateLimit": 1000,
+  "UseMALOfficial": false,
+  "VideoExtensions": [
+    ".mkv",
+    ".mp4",
+    ".avi",
+    ".m4v",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".ts"
+  ],
+  "NamingFormat": {
+    "Episode": "{Title} - S{Season:D2}E{Episode:D2} - {EpisodeTitle}",
+    "Movie": "{Title} (Movie)",
+    "Special": "{Title} - S00E{Episode:D2} - {EpisodeTitle}"
+  },
+  "FolderStructure": {
+    "Series": "{OutputPath}\\{Title}\\Season {Season:D2}",
+    "Movie": "{OutputPath}\\Movies\\{Title}",
+    "RelatedMovie": "{OutputPath}\\{Title}\\Season 00"
+  },
+  "SearchSettings": {
+    "RemoveTags": [
+      "[SubsPlease]",
+      "[HorribleSubs]",
+      "[Erai-raws]",
+      "[Commie]",
+      "[FFF]",
+      "[GJM]"
+    ],
+    "RemoveQuality": [
+      "1080p",
+      "720p",
+      "480p",
+      "2160p",
+      "4K",
+      "BluRay",
+      "BDRip",
+      "WEB-DL",
+      "WEBRip"
+    ],
+    "RemoveSeasonInfo": true,
+    "PreserveGroupTags": false
+  },
+  "AutoDetection": {
+    "AnimeKeywords": [
+      "anime",
+      "season",
+      "episode",
+      "ova",
+      "ona",
+      "special",
+      "BD",
+      "BluRay"
+    ],
+    "AnimeGroups": [
+      "HorribleSubs",
+      "SubsPlease",
+      "Erai-raws",
+      "Commie",
+      "FFF",
+      "GJM",
+      "Judas"
+    ],
+    "MovieKeywords": [
+      "movie",
+      "film"
+    ]
+  },
+  "ErrorHandling": {
+    "ContinueOnError": true,
+    "LogErrors": true,
+    "LogPath": "Desktop",
+    "DetailedErrorLog": true
+  },
+  "Features": {
+    "DownloadArtwork": true,
+    "CreateFolders": true,
+    "MoveFiles": true,
+    "RenameFiles": true,
+    "BackupOriginalNames": false
+  },
+  "Advanced": {
+    "UseEnglishTitles": true,
+    "FallbackToRomaji": true,
+    "StripParentheses": true,
+    "MaxConcurrentAPI": 1,
+    "RetryOnFailure": 3,
+    "RetryDelayMs": 1000
+  }
+}

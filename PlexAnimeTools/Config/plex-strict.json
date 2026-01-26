@@ -1,0 +1,51 @@
+{
+  "TMDbAPIKey": "YOUR_TMDB_API_KEY_HERE",
+  "JikanRateLimit": 500,
+  "TMDbRateLimit": 300,
+  "VideoExtensions": [
+    ".mkv",
+    ".mp4"
+  ],
+  "NamingFormat": {
+    "Episode": "{Title} - S{Season:D2}E{Episode:D2}",
+    "Movie": "{Title} ({Year})",
+    "Special": "{Title} - S00E{Episode:D2}"
+  },
+  "FolderStructure": {
+    "Series": "{OutputPath}\\{Title}\\Season {Season:D2}",
+    "Movie": "{OutputPath}\\Movies\\{Title}",
+    "RelatedMovie": "{OutputPath}\\{Title}\\Specials"
+  },
+  "SearchSettings": {
+    "RemoveTags": ["*"],
+    "RemoveQuality": ["*"],
+    "RemoveSeasonInfo": true,
+    "PreserveGroupTags": false
+  },
+  "AutoDetection": {
+    "AnimeKeywords": ["anime"],
+    "AnimeGroups": [],
+    "MovieKeywords": ["movie", "film"]
+  },
+  "ErrorHandling": {
+    "ContinueOnError": false,
+    "LogErrors": true,
+    "LogPath": "Desktop",
+    "DetailedErrorLog": true
+  },
+  "Features": {
+    "DownloadArtwork": true,
+    "CreateFolders": true,
+    "MoveFiles": true,
+    "RenameFiles": true,
+    "BackupOriginalNames": false
+  },
+  "Advanced": {
+    "UseEnglishTitles": true,
+    "FallbackToRomaji": false,
+    "StripParentheses": true,
+    "MaxConcurrentAPI": 1,
+    "RetryOnFailure": 1,
+    "RetryDelayMs": 500
+  }
+}
