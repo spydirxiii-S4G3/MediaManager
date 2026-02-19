@@ -46,8 +46,10 @@ $toolTip.ReshowDelay = 200
 # ===============================================================================
 # MAIN FORM
 # ===============================================================================
+$script:AppVersion = "V1.2.4"
+
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Media File Renamer"
+$form.Text = "Media File Renamer  $script:AppVersion  |  Creator: S4G3"
 $form.Font = $fontNormal
 $form.MinimumSize = New-Object System.Drawing.Size(950, 650)
 $form.StartPosition = "CenterScreen"
@@ -71,9 +73,10 @@ $tabControl.Dock = "Fill"
 $tabControl.Font = $fontNormal
 
 $tabRename   = New-Object System.Windows.Forms.TabPage "  Rename  "
+$tabOrganize = New-Object System.Windows.Forms.TabPage "  Organize  "
 $tabSettings = New-Object System.Windows.Forms.TabPage "  Settings  "
 
-$tabControl.TabPages.AddRange(@($tabRename, $tabSettings))
+$tabControl.TabPages.AddRange(@($tabRename, $tabOrganize, $tabSettings))
 $form.Controls.Add($tabControl)
 
 # ===============================================================================
@@ -246,7 +249,7 @@ $cmbTitleSource = New-Object System.Windows.Forms.ComboBox
 $cmbTitleSource.Location = New-Object System.Drawing.Point(360, 109)
 $cmbTitleSource.Size = New-Object System.Drawing.Size(120, 23)
 $cmbTitleSource.DropDownStyle = "DropDownList"
-$cmbTitleSource.Items.AddRange(@("None", "Parse from file", "Manual edit", "TMDB Lookup", "TVDB Lookup"))
+$cmbTitleSource.Items.AddRange(@("None", "Parse from file", "Manual edit", "TMDB Lookup", "TVDB Lookup", "MAL (Jikan)"))
 $cmbTitleSource.SelectedIndex = 0
 $toolTip.SetToolTip($cmbTitleSource, "Where to get episode titles. TMDB/TVDB fetch from the internet (needs API key in Settings)")
 $panelTop.Controls.Add($cmbTitleSource)
@@ -259,8 +262,8 @@ $lblLang.Visible = $false
 $panelTop.Controls.Add($lblLang)
 
 $cmbLanguage = New-Object System.Windows.Forms.ComboBox
-$cmbLanguage.Location = New-Object System.Drawing.Point(527, 109)
-$cmbLanguage.Size = New-Object System.Drawing.Size(70, 23)
+$cmbLanguage.Location = New-Object System.Drawing.Point(525, 109)
+$cmbLanguage.Size = New-Object System.Drawing.Size(55, 23)
 $cmbLanguage.DropDownStyle = "DropDownList"
 $cmbLanguage.Items.AddRange(@("en", "ja", "ko", "zh", "de", "fr", "es", "pt", "it", "ru"))
 $cmbLanguage.SelectedIndex = 0
@@ -268,22 +271,52 @@ $cmbLanguage.Visible = $false
 $toolTip.SetToolTip($cmbLanguage, "Language for episode titles (en=English, ja=Japanese, etc.)")
 $panelTop.Controls.Add($cmbLanguage)
 
+$lblOrdering = New-Object System.Windows.Forms.Label
+$lblOrdering.Text = "Order:"
+$lblOrdering.Location = New-Object System.Drawing.Point(585, 111)
+$lblOrdering.Size = New-Object System.Drawing.Size(40, 23)
+$lblOrdering.Visible = $false
+$panelTop.Controls.Add($lblOrdering)
+
+$cmbOrdering = New-Object System.Windows.Forms.ComboBox
+$cmbOrdering.Location = New-Object System.Drawing.Point(627, 109)
+$cmbOrdering.Size = New-Object System.Drawing.Size(100, 23)
+$cmbOrdering.DropDownStyle = "DropDownList"
+$cmbOrdering.Visible = $false
+$toolTip.SetToolTip($cmbOrdering, "Episode ordering type (TVDB: Aired/DVD/Absolute/International)")
+$panelTop.Controls.Add($cmbOrdering)
+
 $btnFetchTitles = New-Object System.Windows.Forms.Button
 $btnFetchTitles.Text = "Fetch Titles"
-$btnFetchTitles.Location = New-Object System.Drawing.Point(605, 108)
+$btnFetchTitles.Location = New-Object System.Drawing.Point(735, 108)
 $btnFetchTitles.Size = New-Object System.Drawing.Size(90, 25)
 $btnFetchTitles.FlatStyle = "Flat"
 $btnFetchTitles.BackColor = $t.ButtonNeutral
 $btnFetchTitles.ForeColor = $t.ButtonFore
 $btnFetchTitles.Visible = $false
-$toolTip.SetToolTip($btnFetchTitles, "Download episode titles from TMDB or TVDB")
+$toolTip.SetToolTip($btnFetchTitles, "Download episode titles from TMDB, TVDB, or MAL")
 $panelTop.Controls.Add($btnFetchTitles)
 
 $cmbTitleSource.Add_SelectedIndexChanged({
-    $isApi = ($cmbTitleSource.SelectedItem -match "TMDB|TVDB")
+    $isApi = ($cmbTitleSource.SelectedItem -match "TMDB|TVDB|MAL")
     $btnFetchTitles.Visible = $isApi
     $lblLang.Visible = $isApi
     $cmbLanguage.Visible = $isApi
+
+    # Show ordering dropdown for TVDB and TMDB
+    $showOrder = ($cmbTitleSource.SelectedItem -match "TVDB|TMDB")
+    $lblOrdering.Visible = $showOrder
+    $cmbOrdering.Visible = $showOrder
+
+    # Populate ordering options based on source
+    $cmbOrdering.Items.Clear()
+    if ($cmbTitleSource.SelectedItem -match "TVDB") {
+        $cmbOrdering.Items.AddRange(@("Aired", "DVD", "Absolute", "International"))
+        $cmbOrdering.SelectedIndex = 0
+    } elseif ($cmbTitleSource.SelectedItem -match "TMDB") {
+        $cmbOrdering.Items.Add("Default")
+        $cmbOrdering.SelectedIndex = 0
+    }
 })
 
 # -- Row 5: Search / Filter & Presets ------------------------------------------
@@ -503,7 +536,7 @@ $grid.AllowUserToResizeRows = $false
 $grid.AllowUserToOrderColumns = $true
 $grid.AutoSizeColumnsMode = "None"
 $grid.SelectionMode = "FullRowSelect"
-$grid.MultiSelect = $false
+$grid.MultiSelect = $true
 $grid.RowHeadersVisible = $false
 $grid.ColumnHeadersHeightSizeMode = "AutoSize"
 $grid.EnableHeadersVisualStyles = $false
@@ -641,6 +674,9 @@ $panelTop.SendToBack()
 
 # -- Context Menu --------------------------------------------------------------
 $contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+$menuRenameThis = $contextMenu.Items.Add("Rename This File")
+$menuRenameSelected = $contextMenu.Items.Add("Rename Selected Files")
+$contextMenu.Items.Add("-") | Out-Null
 $menuEditTitle = $contextMenu.Items.Add("Edit Episode Title (F2 or double-click)")
 $menuExclude   = $contextMenu.Items.Add("Exclude / Include")
 $contextMenu.Items.Add("-") | Out-Null
@@ -649,7 +685,388 @@ $menuMoveDown  = $contextMenu.Items.Add("Move Down")
 $grid.ContextMenuStrip = $contextMenu
 
 # ===============================================================================
-# TAB 2: SETTINGS
+# TAB 2: ORGANIZE
+# ===============================================================================
+
+# -- Organize State
+$script:OrganizeFiles = @()
+$script:OrganizeRollback = @()
+$script:OrgSeasonMap = @()
+$script:OrgSelectedShowId = ""
+$script:OrgSelectedShowName = ""
+$script:OrgSelectedShowYear = ""
+$script:OrgSelectedSource = ""
+
+# -- Top Panel -----------------------------------------------------------------
+$orgPanelTop = New-Object System.Windows.Forms.Panel
+$orgPanelTop.Dock = "Top"
+$orgPanelTop.Height = 140
+
+$lblOrgInfo = New-Object System.Windows.Forms.Label
+$lblOrgInfo.Text = "Scan a folder of mixed/random files. The app detects show names, seasons, and episodes, then organizes them into folders."
+$lblOrgInfo.Location = New-Object System.Drawing.Point(12, 8)
+$lblOrgInfo.Size = New-Object System.Drawing.Size(800, 20)
+$lblOrgInfo.Font = $fontSmall
+$lblOrgInfo.ForeColor = $t.AccentColor
+$orgPanelTop.Controls.Add($lblOrgInfo)
+
+# Row 1: Source folder
+$lblOrgSource = New-Object System.Windows.Forms.Label
+$lblOrgSource.Text = "Source:"
+$lblOrgSource.Location = New-Object System.Drawing.Point(12, 36)
+$lblOrgSource.Size = New-Object System.Drawing.Size(55, 23)
+$orgPanelTop.Controls.Add($lblOrgSource)
+
+$txtOrgSource = New-Object System.Windows.Forms.TextBox
+$txtOrgSource.Location = New-Object System.Drawing.Point(70, 34)
+$txtOrgSource.Size = New-Object System.Drawing.Size(750, 23)
+$txtOrgSource.Anchor = "Top,Left,Right"
+$txtOrgSource.ReadOnly = $true
+$toolTip.SetToolTip($txtOrgSource, "The folder containing your mixed/random files")
+$orgPanelTop.Controls.Add($txtOrgSource)
+
+$btnOrgBrowseSource = New-Object System.Windows.Forms.Button
+$btnOrgBrowseSource.Text = "Browse..."
+$btnOrgBrowseSource.Location = New-Object System.Drawing.Point(830, 32)
+$btnOrgBrowseSource.Anchor = "Top,Right"
+$btnOrgBrowseSource.Size = New-Object System.Drawing.Size(85, 27)
+$btnOrgBrowseSource.FlatStyle = "Flat"
+$btnOrgBrowseSource.BackColor = $t.ButtonPrimary
+$btnOrgBrowseSource.ForeColor = $t.ButtonFore
+$btnOrgBrowseSource.Cursor = "Hand"
+$toolTip.SetToolTip($btnOrgBrowseSource, "Select the folder with random/mixed episode files")
+$orgPanelTop.Controls.Add($btnOrgBrowseSource)
+
+# Row 2: Destination folder
+$lblOrgDest = New-Object System.Windows.Forms.Label
+$lblOrgDest.Text = "Dest:"
+$lblOrgDest.Location = New-Object System.Drawing.Point(12, 68)
+$lblOrgDest.Size = New-Object System.Drawing.Size(55, 23)
+$orgPanelTop.Controls.Add($lblOrgDest)
+
+$txtOrgDest = New-Object System.Windows.Forms.TextBox
+$txtOrgDest.Location = New-Object System.Drawing.Point(70, 66)
+$txtOrgDest.Size = New-Object System.Drawing.Size(750, 23)
+$txtOrgDest.Anchor = "Top,Left,Right"
+$txtOrgDest.ReadOnly = $true
+$toolTip.SetToolTip($txtOrgDest, "Where to create the organized show/season folders (e.g. your TV Shows folder)")
+$orgPanelTop.Controls.Add($txtOrgDest)
+
+$btnOrgBrowseDest = New-Object System.Windows.Forms.Button
+$btnOrgBrowseDest.Text = "Browse..."
+$btnOrgBrowseDest.Location = New-Object System.Drawing.Point(830, 64)
+$btnOrgBrowseDest.Anchor = "Top,Right"
+$btnOrgBrowseDest.Size = New-Object System.Drawing.Size(85, 27)
+$btnOrgBrowseDest.FlatStyle = "Flat"
+$btnOrgBrowseDest.BackColor = $t.ButtonPrimary
+$btnOrgBrowseDest.ForeColor = $t.ButtonFore
+$btnOrgBrowseDest.Cursor = "Hand"
+$toolTip.SetToolTip($btnOrgBrowseDest, "Select your main TV Shows / Anime folder")
+$orgPanelTop.Controls.Add($btnOrgBrowseDest)
+
+# Row 3: Season Lookup
+$lblOrgLookup = New-Object System.Windows.Forms.Label
+$lblOrgLookup.Text = "Lookup:"
+$lblOrgLookup.Location = New-Object System.Drawing.Point(12, 100)
+$lblOrgLookup.Size = New-Object System.Drawing.Size(55, 23)
+$orgPanelTop.Controls.Add($lblOrgLookup)
+
+$cmbOrgSource = New-Object System.Windows.Forms.ComboBox
+$cmbOrgSource.Location = New-Object System.Drawing.Point(70, 98)
+$cmbOrgSource.Size = New-Object System.Drawing.Size(110, 23)
+$cmbOrgSource.DropDownStyle = "DropDownList"
+$cmbOrgSource.Items.AddRange(@("TMDB", "TVDB", "MAL (Jikan)"))
+$cmbOrgSource.SelectedIndex = 1
+$toolTip.SetToolTip($cmbOrgSource, "Source for season map lookup")
+$orgPanelTop.Controls.Add($cmbOrgSource)
+
+$lblOrgOrder = New-Object System.Windows.Forms.Label
+$lblOrgOrder.Text = "Order:"
+$lblOrgOrder.Location = New-Object System.Drawing.Point(188, 100)
+$lblOrgOrder.Size = New-Object System.Drawing.Size(40, 23)
+$orgPanelTop.Controls.Add($lblOrgOrder)
+
+$cmbOrgOrdering = New-Object System.Windows.Forms.ComboBox
+$cmbOrgOrdering.Location = New-Object System.Drawing.Point(230, 98)
+$cmbOrgOrdering.Size = New-Object System.Drawing.Size(105, 23)
+$cmbOrgOrdering.DropDownStyle = "DropDownList"
+$cmbOrgOrdering.Items.AddRange(@("Aired", "DVD", "Absolute", "International"))
+$cmbOrgOrdering.SelectedIndex = 0
+$toolTip.SetToolTip($cmbOrgOrdering, "Episode ordering type for TVDB")
+$orgPanelTop.Controls.Add($cmbOrgOrdering)
+
+$btnOrgFetchMap = New-Object System.Windows.Forms.Button
+$btnOrgFetchMap.Text = "Fetch Season Map"
+$btnOrgFetchMap.Location = New-Object System.Drawing.Point(345, 96)
+$btnOrgFetchMap.Size = New-Object System.Drawing.Size(120, 25)
+$btnOrgFetchMap.FlatStyle = "Flat"
+$btnOrgFetchMap.BackColor = $t.ButtonNeutral
+$btnOrgFetchMap.ForeColor = $t.ButtonFore
+$btnOrgFetchMap.Cursor = "Hand"
+$toolTip.SetToolTip($btnOrgFetchMap, "Fetch season breakdown from API to auto-map episode numbers")
+$orgPanelTop.Controls.Add($btnOrgFetchMap)
+
+$lblOrgMapInfo = New-Object System.Windows.Forms.Label
+$lblOrgMapInfo.Text = ""
+$lblOrgMapInfo.Location = New-Object System.Drawing.Point(475, 100)
+$lblOrgMapInfo.Size = New-Object System.Drawing.Size(400, 20)
+$lblOrgMapInfo.Font = $fontSmall
+$lblOrgMapInfo.ForeColor = $t.AccentColor
+$lblOrgMapInfo.Anchor = "Top,Left,Right"
+$orgPanelTop.Controls.Add($lblOrgMapInfo)
+
+$cmbOrgSource.Add_SelectedIndexChanged({
+    $isTvdb = ($cmbOrgSource.SelectedItem -match "TVDB")
+    $lblOrgOrder.Visible = $isTvdb
+    $cmbOrgOrdering.Visible = $isTvdb
+})
+
+$chkAbsoluteMode = New-Object System.Windows.Forms.CheckBox
+$chkAbsoluteMode.Text = "Treat as Absolute"
+$chkAbsoluteMode.Location = New-Object System.Drawing.Point(475, 100)
+$chkAbsoluteMode.Size = New-Object System.Drawing.Size(130, 20)
+$chkAbsoluteMode.Checked = $false
+$toolTip.SetToolTip($chkAbsoluteMode, "Episode numbers are absolute (continuous across seasons). Auto-Map will convert to season/episode.")
+$orgPanelTop.Controls.Add($chkAbsoluteMode)
+
+$chkPlexNaming = New-Object System.Windows.Forms.CheckBox
+$chkPlexNaming.Text = "Plex naming"
+$chkPlexNaming.Location = New-Object System.Drawing.Point(610, 100)
+$chkPlexNaming.Size = New-Object System.Drawing.Size(105, 20)
+$chkPlexNaming.Checked = $false
+$toolTip.SetToolTip($chkPlexNaming, "Use Plex-style folder: Show Name (Year) {tvdb-ID} or {tmdb-ID}")
+$orgPanelTop.Controls.Add($chkPlexNaming)
+
+$lblOrgMapInfo.Location = New-Object System.Drawing.Point(12, 122)
+$lblOrgMapInfo.Size = New-Object System.Drawing.Size(900, 18)
+
+$tabOrganize.Controls.Add($orgPanelTop)
+
+# -- Button Bar ----------------------------------------------------------------
+$orgPanelButtons = New-Object System.Windows.Forms.Panel
+$orgPanelButtons.Dock = "Top"
+$orgPanelButtons.Height = 42
+
+$btnOrgScan = New-Object System.Windows.Forms.Button
+$btnOrgScan.Text = "Scan Files"
+$btnOrgScan.Location = New-Object System.Drawing.Point(12, 6)
+$btnOrgScan.Size = New-Object System.Drawing.Size(100, 30)
+$btnOrgScan.FlatStyle = "Flat"
+$btnOrgScan.BackColor = $t.ButtonPrimary
+$btnOrgScan.ForeColor = $t.ButtonFore
+$btnOrgScan.Cursor = "Hand"
+$btnOrgScan.Enabled = $false
+$toolTip.SetToolTip($btnOrgScan, "Scan the source folder and detect shows/seasons/episodes")
+$orgPanelButtons.Controls.Add($btnOrgScan)
+
+$btnOrgPreview = New-Object System.Windows.Forms.Button
+$btnOrgPreview.Text = "Preview"
+$btnOrgPreview.Location = New-Object System.Drawing.Point(120, 6)
+$btnOrgPreview.Size = New-Object System.Drawing.Size(85, 30)
+$btnOrgPreview.FlatStyle = "Flat"
+$btnOrgPreview.BackColor = $t.ButtonNeutral
+$btnOrgPreview.ForeColor = $t.ButtonFore
+$btnOrgPreview.Cursor = "Hand"
+$btnOrgPreview.Enabled = $false
+$toolTip.SetToolTip($btnOrgPreview, "Generate target paths - see where files will end up")
+$orgPanelButtons.Controls.Add($btnOrgPreview)
+
+$btnOrgExecute = New-Object System.Windows.Forms.Button
+$btnOrgExecute.Text = "Organize Files"
+$btnOrgExecute.Location = New-Object System.Drawing.Point(213, 6)
+$btnOrgExecute.Size = New-Object System.Drawing.Size(120, 30)
+$btnOrgExecute.FlatStyle = "Flat"
+$btnOrgExecute.BackColor = $t.ButtonSuccess
+$btnOrgExecute.ForeColor = $t.ButtonFore
+$btnOrgExecute.Cursor = "Hand"
+$btnOrgExecute.Enabled = $false
+$toolTip.SetToolTip($btnOrgExecute, "Move and rename files into organized show/season folders")
+$orgPanelButtons.Controls.Add($btnOrgExecute)
+
+$btnOrgUndo = New-Object System.Windows.Forms.Button
+$btnOrgUndo.Text = "Undo"
+$btnOrgUndo.Location = New-Object System.Drawing.Point(341, 6)
+$btnOrgUndo.Size = New-Object System.Drawing.Size(70, 30)
+$btnOrgUndo.FlatStyle = "Flat"
+$btnOrgUndo.BackColor = $t.ButtonNeutral
+$btnOrgUndo.ForeColor = $t.ButtonFore
+$btnOrgUndo.Cursor = "Hand"
+$btnOrgUndo.Enabled = $false
+$toolTip.SetToolTip($btnOrgUndo, "Move files back to their original locations")
+$orgPanelButtons.Controls.Add($btnOrgUndo)
+
+$btnOrgClear = New-Object System.Windows.Forms.Button
+$btnOrgClear.Text = "Clear"
+$btnOrgClear.Location = New-Object System.Drawing.Point(419, 6)
+$btnOrgClear.Size = New-Object System.Drawing.Size(70, 30)
+$btnOrgClear.FlatStyle = "Flat"
+$btnOrgClear.BackColor = $t.ButtonNeutral
+$btnOrgClear.ForeColor = $t.ButtonFore
+$btnOrgClear.Cursor = "Hand"
+$toolTip.SetToolTip($btnOrgClear, "Clear the scan results and start over")
+$orgPanelButtons.Controls.Add($btnOrgClear)
+
+$btnOrgAutoMap = New-Object System.Windows.Forms.Button
+$btnOrgAutoMap.Text = "Auto-Map"
+$btnOrgAutoMap.Location = New-Object System.Drawing.Point(497, 6)
+$btnOrgAutoMap.Size = New-Object System.Drawing.Size(90, 30)
+$btnOrgAutoMap.FlatStyle = "Flat"
+$btnOrgAutoMap.BackColor = $t.ButtonNeutral
+$btnOrgAutoMap.ForeColor = $t.ButtonFore
+$btnOrgAutoMap.Cursor = "Hand"
+$btnOrgAutoMap.Enabled = $false
+$toolTip.SetToolTip($btnOrgAutoMap, "Auto-map absolute episode numbers to correct seasons using the fetched season map")
+$orgPanelButtons.Controls.Add($btnOrgAutoMap)
+
+$btnOrgBatchAssign = New-Object System.Windows.Forms.Button
+$btnOrgBatchAssign.Text = "Batch Assign"
+$btnOrgBatchAssign.Location = New-Object System.Drawing.Point(595, 6)
+$btnOrgBatchAssign.Size = New-Object System.Drawing.Size(100, 30)
+$btnOrgBatchAssign.FlatStyle = "Flat"
+$btnOrgBatchAssign.BackColor = $t.ButtonNeutral
+$btnOrgBatchAssign.ForeColor = $t.ButtonFore
+$btnOrgBatchAssign.Cursor = "Hand"
+$btnOrgBatchAssign.Enabled = $false
+$toolTip.SetToolTip($btnOrgBatchAssign, "Assign selected rows to a specific season")
+$orgPanelButtons.Controls.Add($btnOrgBatchAssign)
+
+$tabOrganize.Controls.Add($orgPanelButtons)
+
+# -- Progress ------------------------------------------------------------------
+$orgProgressBar = New-Object System.Windows.Forms.ProgressBar
+$orgProgressBar.Dock = "Top"
+$orgProgressBar.Height = 4
+$orgProgressBar.Style = "Continuous"
+$orgProgressBar.Visible = $false
+$tabOrganize.Controls.Add($orgProgressBar)
+
+# -- Season Reference Panel ----------------------------------------------------
+$orgSeasonPanel = New-Object System.Windows.Forms.Panel
+$orgSeasonPanel.Dock = "Top"
+$orgSeasonPanel.Height = 60
+$orgSeasonPanel.Visible = $false
+
+$txtOrgSeasonRef = New-Object System.Windows.Forms.TextBox
+$txtOrgSeasonRef.Dock = "Fill"
+$txtOrgSeasonRef.Multiline = $true
+$txtOrgSeasonRef.ReadOnly = $true
+$txtOrgSeasonRef.ScrollBars = "Horizontal"
+$txtOrgSeasonRef.Font = $fontSmall
+$txtOrgSeasonRef.BackColor = $t.ControlBack
+$txtOrgSeasonRef.ForeColor = $t.AccentColor
+$orgSeasonPanel.Controls.Add($txtOrgSeasonRef)
+
+$tabOrganize.Controls.Add($orgSeasonPanel)
+
+# -- Grid ----------------------------------------------------------------------
+$orgGrid = New-Object System.Windows.Forms.DataGridView
+$orgGrid.Dock = "Fill"
+$orgGrid.Font = $fontSmall
+$orgGrid.AllowUserToAddRows = $false
+$orgGrid.AllowUserToDeleteRows = $false
+$orgGrid.AllowUserToResizeColumns = $true
+$orgGrid.AllowUserToResizeRows = $false
+$orgGrid.AutoSizeColumnsMode = "None"
+$orgGrid.SelectionMode = "FullRowSelect"
+$orgGrid.MultiSelect = $true
+$orgGrid.RowHeadersVisible = $false
+$orgGrid.ColumnHeadersHeightSizeMode = "AutoSize"
+$orgGrid.EnableHeadersVisualStyles = $false
+$orgGrid.ColumnHeadersDefaultCellStyle.Alignment = "MiddleCenter"
+$orgGrid.ScrollBars = "Both"
+$orgGrid.BorderStyle = "None"
+$orgGrid.AutoGenerateColumns = $false
+$orgGrid.EditMode = "EditOnEnter"
+
+$orgColCheck = New-Object System.Windows.Forms.DataGridViewCheckBoxColumn
+$orgColCheck.Name = "OrgInclude"
+$orgColCheck.HeaderText = [string][char]0x2611
+$orgColCheck.Width = 35
+$orgColCheck.Resizable = "False"
+$orgGrid.Columns.Add($orgColCheck) | Out-Null
+
+$orgColOrig = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColOrig.Name = "OrgOriginal"
+$orgColOrig.HeaderText = "Original File"
+$orgColOrig.MinimumWidth = 100
+$orgColOrig.FillWeight = 30
+$orgColOrig.AutoSizeMode = "Fill"
+$orgColOrig.ReadOnly = $true
+$orgGrid.Columns.Add($orgColOrig) | Out-Null
+
+$orgColShow = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColShow.Name = "OrgShow"
+$orgColShow.HeaderText = "Detected Show"
+$orgColShow.MinimumWidth = 80
+$orgColShow.FillWeight = 25
+$orgColShow.AutoSizeMode = "Fill"
+$orgColShow.ReadOnly = $false
+$orgGrid.Columns.Add($orgColShow) | Out-Null
+
+$orgColSeason = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColSeason.Name = "OrgSeason"
+$orgColSeason.HeaderText = "S#"
+$orgColSeason.Width = 40
+$orgColSeason.Resizable = "False"
+$orgColSeason.ReadOnly = $false
+$orgGrid.Columns.Add($orgColSeason) | Out-Null
+
+$orgColEpisode = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColEpisode.Name = "OrgEpisode"
+$orgColEpisode.HeaderText = "Ep#"
+$orgColEpisode.Width = 45
+$orgColEpisode.Resizable = "False"
+$orgColEpisode.ReadOnly = $false
+$orgGrid.Columns.Add($orgColEpisode) | Out-Null
+
+$orgColTarget = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColTarget.Name = "OrgTarget"
+$orgColTarget.HeaderText = "Target Path"
+$orgColTarget.MinimumWidth = 100
+$orgColTarget.FillWeight = 35
+$orgColTarget.AutoSizeMode = "Fill"
+$orgColTarget.ReadOnly = $true
+$orgGrid.Columns.Add($orgColTarget) | Out-Null
+
+$orgColSize = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColSize.Name = "OrgSize"
+$orgColSize.HeaderText = "Size"
+$orgColSize.Width = 75
+$orgColSize.ReadOnly = $true
+$orgGrid.Columns.Add($orgColSize) | Out-Null
+
+$orgColStatus = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+$orgColStatus.Name = "OrgStatus"
+$orgColStatus.HeaderText = "Status"
+$orgColStatus.Width = 100
+$orgColStatus.ReadOnly = $true
+$orgGrid.Columns.Add($orgColStatus) | Out-Null
+
+$tabOrganize.Controls.Add($orgGrid)
+
+# -- Organize Status Bar -------------------------------------------------------
+$orgStatusBar = New-Object System.Windows.Forms.StatusStrip
+$orgStatusBar.Dock = "Bottom"
+$orgStatusLabel = New-Object System.Windows.Forms.ToolStripStatusLabel
+$orgStatusLabel.Text = "Browse to a source folder and set destination, then click Scan"
+$orgStatusLabel.Spring = $true
+$orgStatusLabel.TextAlign = "MiddleLeft"
+$orgStatusBar.Items.Add($orgStatusLabel) | Out-Null
+$orgStatusCountLabel = New-Object System.Windows.Forms.ToolStripStatusLabel
+$orgStatusCountLabel.Text = ""
+$orgStatusBar.Items.Add($orgStatusCountLabel) | Out-Null
+$tabOrganize.Controls.Add($orgStatusBar)
+
+# -- Organize Docking Order
+$orgGrid.SendToBack()
+$orgStatusBar.SendToBack()
+$orgSeasonPanel.SendToBack()
+$orgProgressBar.SendToBack()
+$orgPanelButtons.SendToBack()
+$orgPanelTop.SendToBack()
+
+# ===============================================================================
+# TAB 3: SETTINGS
 # ===============================================================================
 
 # -- Template Group ------------------------------------------------------------
@@ -717,11 +1134,11 @@ $txtTemplate.Add_TextChanged({
 })
 
 $lblTmplExamples = New-Object System.Windows.Forms.Label
-$lblTmplExamples.Text = @"
+$lblTmplExamples.Text = @'
   {show} - S{season}E{episode}                         -> Show - S01E01.mp4
   {show} - S{season}E{episode} - {title}               -> Show - S01E01 - Title.mp4
   S{season}E{episode} - {show}                         -> S01E01 - Show.mp4
-"@
+'@
 $lblTmplExamples.Location = New-Object System.Drawing.Point(15, 138)
 $lblTmplExamples.Size = New-Object System.Drawing.Size(720, 45)
 $lblTmplExamples.Font = $fontMono
@@ -1161,6 +1578,14 @@ $tabRename.Add_Resize({
     $btnThemeToggle.Left = $w - 95
 })
 
+$tabOrganize.Add_Resize({
+    $w = $tabOrganize.ClientSize.Width
+    $txtOrgSource.Width = $w - 170
+    $btnOrgBrowseSource.Left = $w - 97
+    $txtOrgDest.Width = $w - 170
+    $btnOrgBrowseDest.Left = $w - 97
+})
+
 # -- Season Tree ---------------------------------------------------------------
 $seasonTree.Add_AfterSelect({
     $node = $seasonTree.SelectedNode
@@ -1530,12 +1955,153 @@ $btnThemeToggle.Add_Click({
     $lblTmplPreviewVal2.ForeColor = $t.AccentColor
     $lblVars.ForeColor = $t.AccentColor
     $panelLegend.BackColor = $t.FormBack
+    # Organize tab
+    $btnOrgBrowseSource.BackColor = $t.ButtonPrimary
+    $btnOrgBrowseSource.ForeColor = $t.ButtonFore
+    $btnOrgBrowseDest.BackColor = $t.ButtonPrimary
+    $btnOrgBrowseDest.ForeColor = $t.ButtonFore
+    $btnOrgScan.BackColor = $t.ButtonPrimary
+    $btnOrgScan.ForeColor = $t.ButtonFore
+    $btnOrgPreview.BackColor = $t.ButtonNeutral
+    $btnOrgPreview.ForeColor = $t.ButtonFore
+    $btnOrgExecute.BackColor = $t.ButtonSuccess
+    $btnOrgExecute.ForeColor = $t.ButtonFore
+    $btnOrgUndo.BackColor = $t.ButtonNeutral
+    $btnOrgUndo.ForeColor = $t.ButtonFore
+    $btnOrgClear.BackColor = $t.ButtonNeutral
+    $btnOrgClear.ForeColor = $t.ButtonFore
+    $btnOrgAutoMap.BackColor = $t.ButtonNeutral
+    $btnOrgAutoMap.ForeColor = $t.ButtonFore
+    $btnOrgBatchAssign.BackColor = $t.ButtonNeutral
+    $btnOrgBatchAssign.ForeColor = $t.ButtonFore
+    $btnOrgFetchMap.BackColor = $t.ButtonNeutral
+    $btnOrgFetchMap.ForeColor = $t.ButtonFore
+    $lblOrgInfo.ForeColor = $t.AccentColor
+    $lblOrgMapInfo.ForeColor = $t.AccentColor
+    $txtOrgSeasonRef.BackColor = $t.ControlBack
+    $txtOrgSeasonRef.ForeColor = $t.AccentColor
     $script:Settings.ThemePreference = $newTheme
     Apply-GridTheme
     Refresh-ListViewFromFileList
+    if ($script:OrganizeFiles.Count -gt 0) { Refresh-OrgGrid }
 })
 
 # -- Context Menu handlers -----------------------------------------------------
+$menuRenameThis.Add_Click({
+    $idx = Get-SelectedGridIndex
+    if ($idx -lt 0 -or $idx -ge $script:FileList.Count) { return }
+    $f = $script:FileList[$idx]
+
+    # Auto-preview this file if no NewName yet
+    if ([string]::IsNullOrWhiteSpace($f.NewName) -or $f.Status -eq "Pending") {
+        $show = $txtShowName.Text
+        $season = [int]$numSeason.Value
+        $template = $txtTemplate.Text
+        $f.NewName = Build-FileName -Template $template -ShowName $show -Season $season -Episode $f.EpisodeNumber -EpisodeTitle $f.EpisodeTitle -Extension $f.Extension -OriginalName $f.OriginalName
+        if ($f.OriginalName -eq $f.NewName) {
+            $statusLabel.Text = "File already has the correct name"
+            return
+        }
+    }
+    if ($f.OriginalName -eq $f.NewName) {
+        $statusLabel.Text = "No change needed for this file"
+        return
+    }
+
+    $confirm = [System.Windows.Forms.MessageBox]::Show(
+        "Rename:`n  $($f.OriginalName)`n->`n  $($f.NewName)", "Rename This File", "YesNo", "Question")
+    if ($confirm -ne "Yes") { return }
+
+    try {
+        $targetPath = Join-Path $f.Directory $f.NewName
+        if (Test-Path $targetPath) {
+            [System.Windows.Forms.MessageBox]::Show("Target file already exists: $($f.NewName)", "Conflict", "OK", "Warning")
+            return
+        }
+        Rename-Item -Path $f.FullPath -NewName $f.NewName -Force
+        $script:FileList[$idx].FullPath = $targetPath
+        $script:FileList[$idx].OriginalName = $f.NewName
+        $script:FileList[$idx].Status = "Done"
+        $script:RollbackData += @([PSCustomObject]@{
+            OriginalPath = (Join-Path $f.Directory $f.OriginalName)
+            NewPath      = $targetPath
+            Mode         = "Rename"
+        })
+        $script:SeasonFileListCache[$script:CurrentSeasonPath] = $script:FileList
+        Refresh-ListViewFromFileList
+        $statusLabel.Text = "Renamed: $($f.NewName)"
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Error: $($_.Exception.Message)", "Rename Failed", "OK", "Error")
+    }
+    Update-ButtonStates
+})
+
+$menuRenameSelected.Add_Click({
+    $selectedRows = @($grid.SelectedRows | ForEach-Object { $_.Index } | Sort-Object)
+    if ($selectedRows.Count -eq 0) { return }
+
+    # Filter to only files that can be renamed
+    $toRename = @()
+    foreach ($idx in $selectedRows) {
+        if ($idx -ge $script:FileList.Count) { continue }
+        $f = $script:FileList[$idx]
+        if ($f.Excluded) { continue }
+
+        # Auto-preview if needed
+        if ([string]::IsNullOrWhiteSpace($f.NewName) -or $f.Status -eq "Pending") {
+            $show = $txtShowName.Text
+            $season = [int]$numSeason.Value
+            $template = $txtTemplate.Text
+            $f.NewName = Build-FileName -Template $template -ShowName $show -Season $season -Episode $f.EpisodeNumber -EpisodeTitle $f.EpisodeTitle -Extension $f.Extension -OriginalName $f.OriginalName
+        }
+        if ($f.OriginalName -ne $f.NewName) { $toRename += $idx }
+    }
+
+    if ($toRename.Count -eq 0) {
+        $statusLabel.Text = "No changes needed for selected files"
+        return
+    }
+
+    $examples = ""
+    $exCount = 0
+    foreach ($idx in $toRename) {
+        if ($exCount -ge 3) { break }
+        $f = $script:FileList[$idx]
+        $examples += "  $($f.OriginalName)`n  -> $($f.NewName)`n`n"
+        $exCount++
+    }
+    $confirm = [System.Windows.Forms.MessageBox]::Show(
+        "Rename $($toRename.Count) file(s)?`n`n$examples", "Rename Selected", "YesNo", "Question")
+    if ($confirm -ne "Yes") { return }
+
+    $success = 0; $errors = 0
+    foreach ($idx in $toRename) {
+        $f = $script:FileList[$idx]
+        try {
+            $targetPath = Join-Path $f.Directory $f.NewName
+            if (Test-Path $targetPath) {
+                $script:FileList[$idx].Status = "Skipped (exists)"
+                continue
+            }
+            Rename-Item -Path $f.FullPath -NewName $f.NewName -Force
+            $script:FileList[$idx].FullPath = $targetPath
+            $script:FileList[$idx].OriginalName = $f.NewName
+            $script:FileList[$idx].Status = "Done"
+            $script:RollbackData += @([PSCustomObject]@{
+                OriginalPath = (Join-Path $f.Directory $f.OriginalName)
+                NewPath      = $targetPath
+                Mode         = "Rename"
+            })
+            $success++
+        } catch { $errors++; $script:FileList[$idx].Status = "Error: $($_.Exception.Message)" }
+    }
+
+    $script:SeasonFileListCache[$script:CurrentSeasonPath] = $script:FileList
+    Refresh-ListViewFromFileList
+    $statusLabel.Text = "$success renamed, $errors errors"
+    Update-ButtonStates
+})
+
 $menuEditTitle.Add_Click({
     $idx = Get-SelectedGridIndex
     if ($idx -lt 0) { return }
@@ -1585,27 +2151,83 @@ $form.Add_KeyDown({
 
 # -- Fetch Titles (API) --------------------------------------------------------
 $btnFetchTitles.Add_Click({
-    $source = if ($cmbTitleSource.SelectedItem -match "TMDB") { "TMDB" } else { "TVDB" }
+    $sourceItem = $cmbTitleSource.SelectedItem
+    $source = if ($sourceItem -match "TMDB") { "TMDB" } elseif ($sourceItem -match "TVDB") { "TVDB" } elseif ($sourceItem -match "MAL") { "MAL" } else { "" }
+    if (-not $source) { return }
     $tmdbKey = $txtTmdbKey.Text
     $tvdbKey = $txtTvdbKey.Text
     $lang = if ($cmbLanguage.SelectedItem) { $cmbLanguage.SelectedItem.ToString() } else { "en" }
-    if (($source -eq "TMDB" -and -not $tmdbKey) -or ($source -eq "TVDB" -and -not $tvdbKey)) {
-        [System.Windows.Forms.MessageBox]::Show("Enter your $source API key in Settings first.", "API Key Required", "OK", "Warning")
+    if ($source -eq "TMDB" -and -not $tmdbKey) {
+        [System.Windows.Forms.MessageBox]::Show("Enter your TMDB API key in Settings first.", "API Key Required", "OK", "Warning")
         return
     }
+    if ($source -eq "TVDB" -and -not $tvdbKey) {
+        [System.Windows.Forms.MessageBox]::Show("Enter your TVDB API key in Settings first.", "API Key Required", "OK", "Warning")
+        return
+    }
+
+    # Map ordering dropdown to TVDB season type
+    $seasonType = "default"
+    if ($source -eq "TVDB" -and $cmbOrdering.SelectedItem) {
+        switch ($cmbOrdering.SelectedItem.ToString()) {
+            "Aired"         { $seasonType = "default" }
+            "DVD"           { $seasonType = "dvd" }
+            "Absolute"      { $seasonType = "absolute" }
+            "International" { $seasonType = "regional" }
+        }
+    }
+
     $statusLabel.Text = "Searching '$($txtShowName.Text)' on $source..."
     [System.Windows.Forms.Application]::DoEvents()
-    $shows = Search-Show -ShowName $txtShowName.Text -Source $source -TmdbKey $tmdbKey -TvdbKey $tvdbKey -Language $lang
+
+    $shows = @()
+    if ($source -eq "MAL") {
+        $statusLabel.Text = "Searching '$($txtShowName.Text)' on MAL..."
+        [System.Windows.Forms.Application]::DoEvents()
+        $shows = Search-Show -ShowName $txtShowName.Text -Source $source -Language $lang
+    } else {
+        $shows = Search-Show -ShowName $txtShowName.Text -Source $source -TmdbKey $tmdbKey -TvdbKey $tvdbKey -Language $lang
+    }
     if ($shows.Count -eq 0) {
         [System.Windows.Forms.MessageBox]::Show("No shows found on $source.", "Not Found", "OK", "Warning")
         $statusLabel.Text = "Ready"
         return
     }
-    $selectedShow = if ($shows.Count -eq 1) { $shows[0] } else { Show-SelectionDialog -Shows $shows }
+    $selectedShow = if ($source -ne "MAL" -and $shows.Count -eq 1) { $shows[0] } else { Show-SelectionDialog -Shows $shows }
     if (-not $selectedShow) { $statusLabel.Text = "Cancelled"; return }
+
+    # TMDB: Check for episode groups and offer to use them
+    $tmdbGroupId = ""
+    if ($source -eq "TMDB") {
+        $statusLabel.Text = "Checking for episode groups..."
+        [System.Windows.Forms.Application]::DoEvents()
+        $groups = Get-TmdbEpisodeGroups -ShowId ([int]$selectedShow.Id) -ApiKey $tmdbKey
+        if ($groups.Count -gt 0) {
+            $groupShows = @()
+            $groupShows += [PSCustomObject]@{ Id = ""; Name = "Default (Standard Ordering)"; Year = ""; Overview = ""; Source = "TMDB" }
+            foreach ($g in $groups) {
+                $groupShows += [PSCustomObject]@{
+                    Id = $g.Id; Name = "$($g.Name) ($($g.Type))"; Year = "$($g.EpCount) eps"
+                    Overview = $g.Description; Source = "TMDB"
+                }
+            }
+            $selectedGroup = Show-SelectionDialog -Shows $groupShows
+            if ($selectedGroup -and $selectedGroup.Id) {
+                $tmdbGroupId = $selectedGroup.Id
+            }
+        }
+    }
+
     $statusLabel.Text = "Fetching titles for '$($selectedShow.Name)' S$([int]$numSeason.Value) ($lang)..."
     [System.Windows.Forms.Application]::DoEvents()
-    $titles = Get-EpisodeTitles -ShowId $selectedShow.Id -Season ([int]$numSeason.Value) -Source $source -TmdbKey $tmdbKey -TvdbKey $tvdbKey -Language $lang
+
+    $titles = @{}
+    if ($tmdbGroupId) {
+        $titles = Get-TmdbGroupEpisodeTitles -GroupId $tmdbGroupId -ApiKey $tmdbKey -Season ([int]$numSeason.Value) -Language $lang
+    } else {
+        $titles = Get-EpisodeTitles -ShowId $selectedShow.Id -Season ([int]$numSeason.Value) -Source $source -TmdbKey $tmdbKey -TvdbKey $tvdbKey -Language $lang -SeasonType $seasonType
+    }
+
     if ($titles.Count -eq 0) {
         [System.Windows.Forms.MessageBox]::Show("No titles found for S$([int]$numSeason.Value).", "Not Found", "OK", "Warning")
         $statusLabel.Text = "Ready"
@@ -1620,8 +2242,8 @@ $btnFetchTitles.Add_Click({
     }
     $script:SeasonFileListCache[$script:CurrentSeasonPath] = $script:FileList
     Refresh-ListViewFromFileList
-    $statusLabel.Text = "$($titles.Count) titles fetched from $source"
-    # Auto re-preview with titles
+    $orderInfo = if ($source -eq "TVDB") { " [$($cmbOrdering.SelectedItem)]" } elseif ($tmdbGroupId) { " [Episode Group]" } else { "" }
+    $statusLabel.Text = "$($titles.Count) titles fetched from $source$orderInfo"
     Invoke-AutoPreview
 })
 
@@ -1709,6 +2331,541 @@ $chkSortDesc.Add_CheckedChanged({
         $script:SeasonFileListCache[$script:CurrentSeasonPath] = $script:FileList
         Refresh-ListViewFromFileList
         Invoke-AutoPreview
+    }
+})
+
+# ===============================================================================
+# ORGANIZE TAB - EVENT HANDLERS
+# ===============================================================================
+
+function Update-OrgButtonStates {
+    $hasSrc = ($txtOrgSource.Text -ne "")
+    $hasDest = ($txtOrgDest.Text -ne "")
+    $hasFiles = ($script:OrganizeFiles.Count -gt 0)
+    $hasRollback = ($script:OrganizeRollback.Count -gt 0)
+    $hasSeasonMap = ($script:OrgSeasonMap.Count -gt 0)
+    $hasPreviewed = $false
+    if ($hasFiles) {
+        $hasPreviewed = ($script:OrganizeFiles | Where-Object { $_.TargetPath -ne "" -and -not $_.Excluded }).Count -gt 0
+    }
+    $btnOrgScan.Enabled = ($hasSrc)
+    $btnOrgPreview.Enabled = ($hasFiles -and $hasDest)
+    $btnOrgExecute.Enabled = $hasPreviewed
+    $btnOrgUndo.Enabled = $hasRollback
+    $btnOrgAutoMap.Enabled = ($hasFiles -and $hasSeasonMap)
+    $btnOrgBatchAssign.Enabled = $hasFiles
+
+    if ($hasPreviewed) {
+        $count = ($script:OrganizeFiles | Where-Object { $_.TargetPath -ne "" -and -not $_.Excluded }).Count
+        $btnOrgExecute.Text = "Organize $count Files"
+    } else {
+        $btnOrgExecute.Text = "Organize Files"
+    }
+}
+
+function Refresh-OrgGrid {
+    $orgGrid.Rows.Clear()
+    $t = Get-Theme
+    foreach ($f in $script:OrganizeFiles) {
+        $rowIdx = $orgGrid.Rows.Add(
+            (-not $f.Excluded),
+            $f.OriginalName,
+            $f.DetectedShow,
+            $f.DetectedSeason,
+            $f.DetectedEpisode,
+            $f.TargetPath,
+            $f.FileSizeText,
+            $f.Status
+        )
+        $row = $orgGrid.Rows[$rowIdx]
+        $row.Tag = $f.FullPath
+        switch -Wildcard ($f.Status) {
+            "Detected"       { $row.DefaultCellStyle.BackColor = $t.RowHighlight }
+            "Needs Review"   { $row.DefaultCellStyle.BackColor = $t.RowWarning }
+            "Organized"      { $row.DefaultCellStyle.BackColor = $t.RowSuccess }
+            "Error*"         { $row.DefaultCellStyle.BackColor = $t.RowError }
+            "Skipped*"       { $row.DefaultCellStyle.BackColor = $t.RowWarning }
+        }
+        if ($f.Excluded) { $row.DefaultCellStyle.ForeColor = $t.DisabledFore }
+    }
+    # Apply theme to organize grid
+    $orgGrid.BackgroundColor = $t.ListBack
+    $orgGrid.GridColor = $t.BorderColor
+    $orgGrid.DefaultCellStyle.BackColor = $t.ListBack
+    $orgGrid.DefaultCellStyle.ForeColor = $t.ListFore
+    $orgGrid.DefaultCellStyle.SelectionBackColor = $t.AccentColor
+    $orgGrid.DefaultCellStyle.SelectionForeColor = [System.Drawing.Color]::White
+    $orgGrid.ColumnHeadersDefaultCellStyle.BackColor = $t.ControlBack
+    $orgGrid.ColumnHeadersDefaultCellStyle.ForeColor = $t.ControlFore
+    $orgGrid.ColumnHeadersDefaultCellStyle.Font = $fontBold
+    $orgGrid.AlternatingRowsDefaultCellStyle.BackColor = $t.RowAlt
+}
+
+$btnOrgBrowseSource.Add_Click({
+    $d = New-Object System.Windows.Forms.FolderBrowserDialog
+    $d.Description = "Select folder containing random/mixed episode files"
+    if ($txtOrgSource.Text -and (Test-Path $txtOrgSource.Text)) { $d.SelectedPath = $txtOrgSource.Text }
+    if ($d.ShowDialog() -eq "OK") {
+        $txtOrgSource.Text = $d.SelectedPath
+        Update-OrgButtonStates
+    }
+})
+
+$btnOrgBrowseDest.Add_Click({
+    $d = New-Object System.Windows.Forms.FolderBrowserDialog
+    $d.Description = "Select your TV Shows / Anime root folder (organized folders will be created here)"
+    if ($txtOrgDest.Text -and (Test-Path $txtOrgDest.Text)) { $d.SelectedPath = $txtOrgDest.Text }
+    if ($d.ShowDialog() -eq "OK") {
+        $txtOrgDest.Text = $d.SelectedPath
+        Update-OrgButtonStates
+    }
+})
+
+$btnOrgScan.Add_Click({
+    if (-not $txtOrgSource.Text -or -not (Test-Path $txtOrgSource.Text)) { return }
+    $orgStatusLabel.Text = "Scanning files..."
+    [System.Windows.Forms.Application]::DoEvents()
+
+    $script:OrganizeFiles = Group-MediaFilesByShow -FolderPath $txtOrgSource.Text
+    Refresh-OrgGrid
+
+    $detected = ($script:OrganizeFiles | Where-Object { $_.ParsedOk }).Count
+    $review = ($script:OrganizeFiles | Where-Object { -not $_.ParsedOk }).Count
+    $shows = ($script:OrganizeFiles | Select-Object -ExpandProperty DetectedShow -Unique).Count
+    $msg = "$($script:OrganizeFiles.Count) files found, $shows shows detected, $detected auto-detected, $review need review"
+    if ($script:OrgSeasonMap.Count -gt 0) {
+        $msg += " | Season map cached - click Auto-Map to apply"
+    }
+    $orgStatusLabel.Text = $msg
+    $orgStatusCountLabel.Text = "$($script:OrganizeFiles.Count) files"
+    Update-OrgButtonStates
+})
+
+$btnOrgPreview.Add_Click({
+    if ($script:OrganizeFiles.Count -eq 0 -or -not $txtOrgDest.Text) { return }
+
+    # Sync edits from grid back to data
+    for ($i = 0; $i -lt $script:OrganizeFiles.Count; $i++) {
+        if ($i -ge $orgGrid.Rows.Count) { break }
+        $script:OrganizeFiles[$i].Excluded = -not $orgGrid.Rows[$i].Cells["OrgInclude"].Value
+        $editShow = $orgGrid.Rows[$i].Cells["OrgShow"].Value
+        if ($editShow) { $script:OrganizeFiles[$i].DetectedShow = $editShow.ToString() }
+        $editSeason = $orgGrid.Rows[$i].Cells["OrgSeason"].Value
+        if ($editSeason -ne $null) { try { $script:OrganizeFiles[$i].DetectedSeason = [int]$editSeason } catch {} }
+        $editEp = $orgGrid.Rows[$i].Cells["OrgEpisode"].Value
+        if ($editEp -ne $null) { try { $script:OrganizeFiles[$i].DetectedEpisode = [int]$editEp } catch {} }
+    }
+
+    $template = $txtTemplate.Text
+    $usePlex = $chkPlexNaming.Checked
+    $script:OrganizeFiles = Build-OrganizePaths -Files $script:OrganizeFiles -DestinationRoot $txtOrgDest.Text -Template $template `
+        -PlexNaming $usePlex -PlexShowName $script:OrgSelectedShowName -PlexYear $script:OrgSelectedShowYear `
+        -PlexId $script:OrgSelectedShowId -PlexSource $script:OrgSelectedSource
+    Refresh-OrgGrid
+
+    # Build folder structure preview
+    $folderMap = @{}
+    foreach ($f in ($script:OrganizeFiles | Where-Object { $_.TargetPath -ne "" -and -not $_.Excluded })) {
+        $rel = $f.TargetPath.Replace($txtOrgDest.Text, "").TrimStart("\", "/")
+        $parts = $rel -split "[/\\]"
+        if ($parts.Count -ge 2) {
+            $showFolder = $parts[0]
+            $seasonFolder = $parts[1]
+            $key = "$showFolder|$seasonFolder"
+            if (-not $folderMap.ContainsKey($key)) { $folderMap[$key] = 0 }
+            $folderMap[$key]++
+        }
+    }
+    if ($folderMap.Count -gt 0) {
+        $previewLines = @()
+        $lastShow = ""
+        foreach ($key in ($folderMap.Keys | Sort-Object)) {
+            $parts = $key -split "\|"
+            $show = $parts[0]
+            $season = $parts[1]
+            $count = $folderMap[$key]
+            if ($show -ne $lastShow) {
+                if ($lastShow -ne "") { $previewLines += "" }
+                $previewLines += $show
+                $lastShow = $show
+            }
+            $previewLines += "    $season - $count file(s)"
+        }
+        $txtOrgSeasonRef.Text = ($previewLines -join "`r`n")
+        $orgSeasonPanel.Visible = $true
+        $orgSeasonPanel.Height = [math]::Min(120, 20 + ($previewLines.Count * 15))
+    }
+
+    $orgStatusLabel.Text = "Preview ready - review target paths, then click Organize"
+    Update-OrgButtonStates
+})
+
+$btnOrgExecute.Add_Click({
+    $toOrganize = ($script:OrganizeFiles | Where-Object { $_.TargetPath -ne "" -and -not $_.Excluded }).Count
+    if ($toOrganize -eq 0) { return }
+
+    # Show examples in confirmation
+    $examples = ""
+    $exCount = 0
+    foreach ($f in $script:OrganizeFiles) {
+        if ($f.TargetPath -and -not $f.Excluded -and $exCount -lt 3) {
+            $examples += "  $($f.OriginalName)`n  -> $($f.TargetPath)`n`n"
+            $exCount++
+        }
+    }
+    $msg = "Move and rename $toOrganize file(s) into organized folders?`n`nExamples:`n$examples"
+    $confirm = [System.Windows.Forms.MessageBox]::Show($msg, "Confirm Organize", "YesNo", "Question")
+    if ($confirm -ne "Yes") { return }
+
+    $orgProgressBar.Visible = $true
+    $orgProgressBar.Maximum = $toOrganize
+    $orgProgressBar.Value = 0
+
+    $results = Invoke-OrganizeFiles -Files $script:OrganizeFiles -OnProgress {
+        param($current, $total, $name)
+        $orgProgressBar.Value = $current
+        $orgStatusLabel.Text = "[$current/$total] $name"
+        [System.Windows.Forms.Application]::DoEvents()
+    }
+
+    $script:OrganizeRollback = $results.RollbackData
+    $orgProgressBar.Visible = $false
+    Refresh-OrgGrid
+
+    $summary = "Organize Complete`n`n"
+    $summary += "Moved & renamed: $($results.Success)`n"
+    $summary += "Skipped: $($results.Skipped)`n"
+    $summary += "Errors: $($results.Errors)"
+    [System.Windows.Forms.MessageBox]::Show($summary, "Organize Complete", "OK", "Information")
+
+    $orgStatusLabel.Text = "$($results.Success) organized, $($results.Skipped) skipped, $($results.Errors) errors"
+    Update-OrgButtonStates
+})
+
+$btnOrgUndo.Add_Click({
+    if ($script:OrganizeRollback.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Nothing to undo.", "Undo", "OK", "Information")
+        return
+    }
+    $confirm = [System.Windows.Forms.MessageBox]::Show(
+        "Move $($script:OrganizeRollback.Count) file(s) back to their original locations?",
+        "Confirm Undo", "YesNo", "Question")
+    if ($confirm -ne "Yes") { return }
+
+    $result = Invoke-OrganizeUndo -RollbackData $script:OrganizeRollback
+    $script:OrganizeRollback = @()
+    [System.Windows.Forms.MessageBox]::Show("$($result.Undone) restored, $($result.Errors) errors", "Undo Complete", "OK", "Information")
+    $orgStatusLabel.Text = "Undo complete"
+
+    # Re-scan to refresh
+    if ($txtOrgSource.Text -and (Test-Path $txtOrgSource.Text)) {
+        $script:OrganizeFiles = Group-MediaFilesByShow -FolderPath $txtOrgSource.Text
+        Refresh-OrgGrid
+    }
+    Update-OrgButtonStates
+})
+
+$btnOrgClear.Add_Click({
+    $orgGrid.Rows.Clear()
+    $script:OrganizeFiles = @()
+    $script:OrganizeRollback = @()
+    $script:OrgSeasonMap = @()
+    $script:OrgSelectedShowId = ""
+    $script:OrgSelectedShowName = ""
+    $script:OrgSelectedShowYear = ""
+    $script:OrgSelectedSource = ""
+    $txtOrgSource.Text = ""
+    $txtOrgDest.Text = ""
+    $orgSeasonPanel.Visible = $false
+    $txtOrgSeasonRef.Text = ""
+    $lblOrgMapInfo.Text = ""
+    $chkAbsoluteMode.Checked = $false
+    $chkPlexNaming.Checked = $false
+    $orgStatusLabel.Text = "Browse to a source folder and set destination, then click Scan"
+    $orgStatusCountLabel.Text = ""
+    Update-OrgButtonStates
+})
+
+# -- Fetch Season Map ----------------------------------------------------------
+$btnOrgFetchMap.Add_Click({
+    if ($script:OrganizeFiles.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Scan files first before fetching a season map.", "No Files", "OK", "Warning")
+        return
+    }
+
+    $orgSourceItem = $cmbOrgSource.SelectedItem
+    $orgSource = if ($orgSourceItem -match "TMDB") { "TMDB" } elseif ($orgSourceItem -match "TVDB") { "TVDB" } elseif ($orgSourceItem -match "MAL") { "MAL" } else { "" }
+    $tmdbKey = $txtTmdbKey.Text
+    $tvdbKey = $txtTvdbKey.Text
+
+    if ($orgSource -eq "TMDB" -and -not $tmdbKey) {
+        [System.Windows.Forms.MessageBox]::Show("Enter your TMDB API key in Settings first.", "API Key Required", "OK", "Warning")
+        return
+    }
+    if ($orgSource -eq "TVDB" -and -not $tvdbKey) {
+        [System.Windows.Forms.MessageBox]::Show("Enter your TVDB API key in Settings first.", "API Key Required", "OK", "Warning")
+        return
+    }
+    if ($orgSource -eq "MAL") {
+        [System.Windows.Forms.MessageBox]::Show("MAL does not support multi-season mapping.`nUse TMDB or TVDB for season maps.", "Not Supported", "OK", "Information")
+        return
+    }
+
+    # Get the most common show name from scanned files
+    $showNames = $script:OrganizeFiles | Where-Object { $_.DetectedShow -ne "Unknown" } | Group-Object DetectedShow | Sort-Object Count -Descending
+    $searchName = if ($showNames.Count -gt 0) { $showNames[0].Name } else { "Unknown" }
+
+    $orgStatusLabel.Text = "Searching '$searchName' on $orgSource..."
+    [System.Windows.Forms.Application]::DoEvents()
+
+    $shows = Search-Show -ShowName $searchName -Source $orgSource -TmdbKey $tmdbKey -TvdbKey $tvdbKey
+    if ($shows.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("No shows found for '$searchName' on $orgSource.", "Not Found", "OK", "Warning")
+        $orgStatusLabel.Text = "Ready"
+        return
+    }
+    $selectedShow = Show-SelectionDialog -Shows $shows
+    if (-not $selectedShow) { $orgStatusLabel.Text = "Cancelled"; return }
+
+    $script:OrgSelectedShowId = $selectedShow.Id
+    $script:OrgSelectedShowName = $selectedShow.Name
+    $script:OrgSelectedShowYear = $selectedShow.Year
+    $script:OrgSelectedSource = $orgSource
+
+    # Map ordering
+    $seasonType = "default"
+    if ($orgSource -eq "TVDB" -and $cmbOrgOrdering.SelectedItem) {
+        switch ($cmbOrgOrdering.SelectedItem.ToString()) {
+            "Aired"         { $seasonType = "default" }
+            "DVD"           { $seasonType = "dvd" }
+            "Absolute"      { $seasonType = "absolute" }
+            "International" { $seasonType = "regional" }
+        }
+    }
+
+    $orgStatusLabel.Text = "Fetching season map for '$($selectedShow.Name)'..."
+    [System.Windows.Forms.Application]::DoEvents()
+
+    $script:OrgSeasonMap = Get-SeasonMap -ShowId $selectedShow.Id -Source $orgSource -TmdbKey $tmdbKey -TvdbKey $tvdbKey -SeasonType $seasonType
+
+    if ($script:OrgSeasonMap.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("No season data found.", "Not Found", "OK", "Warning")
+        $orgStatusLabel.Text = "Ready"
+        return
+    }
+
+    # Build season reference text
+    $refLines = @()
+    $totalEps = 0
+    foreach ($s in $script:OrgSeasonMap) {
+        $refLines += "S$($s.SeasonNumber.ToString('00')): $($s.EpisodeCount) eps (Ep $($s.CumulativeStart)-$($s.CumulativeEnd))"
+        $totalEps += $s.EpisodeCount
+    }
+    $txtOrgSeasonRef.Text = ($refLines -join "  |  ")
+    $orgSeasonPanel.Visible = $true
+    $lblOrgMapInfo.Text = "$($script:OrgSeasonMap.Count) seasons, $totalEps total episodes - $($selectedShow.Name)"
+
+    $orgStatusLabel.Text = "Season map loaded: $($script:OrgSeasonMap.Count) seasons, $totalEps episodes. Click Auto-Map to apply."
+    Update-OrgButtonStates
+})
+
+# -- Auto-Map Seasons ----------------------------------------------------------
+$btnOrgAutoMap.Add_Click({
+    if ($script:OrganizeFiles.Count -eq 0 -or $script:OrgSeasonMap.Count -eq 0) { return }
+
+    $isAbsolute = $chkAbsoluteMode.Checked
+    $mapped = 0
+    $unmapped = 0
+    $skipped = 0
+    for ($i = 0; $i -lt $script:OrganizeFiles.Count; $i++) {
+        $f = $script:OrganizeFiles[$i]
+        if ($f.Excluded) { continue }
+
+        # If not absolute mode, skip files that already have season info (season > 1 or explicitly set)
+        if (-not $isAbsolute -and $f.DetectedSeason -gt 1) {
+            $skipped++
+            continue
+        }
+
+        $absEp = $f.DetectedEpisode
+        if ($absEp -le 0) { $unmapped++; continue }
+
+        $result = Convert-AbsoluteToSeason -AbsoluteEpisode $absEp -SeasonMap $script:OrgSeasonMap
+        if ($result) {
+            $script:OrganizeFiles[$i].DetectedSeason = $result.Season
+            $script:OrganizeFiles[$i].DetectedEpisode = $result.Episode
+            $script:OrganizeFiles[$i].Status = "Detected"
+            $script:OrganizeFiles[$i].ParsedOk = $true
+            $mapped++
+        } else {
+            $script:OrganizeFiles[$i].Status = "Needs Review"
+            $unmapped++
+        }
+    }
+
+    Refresh-OrgGrid
+    $msg = "Auto-mapped $mapped file(s) to seasons."
+    if ($skipped -gt 0) { $msg += " $skipped skipped (already had season)." }
+    if ($unmapped -gt 0) { $msg += " $unmapped could not be mapped." }
+    $orgStatusLabel.Text = $msg
+    Update-OrgButtonStates
+})
+
+# -- Batch Assign Season -------------------------------------------------------
+$btnOrgBatchAssign.Add_Click({
+    if ($script:OrganizeFiles.Count -eq 0) { return }
+
+    $selectedRows = @()
+    foreach ($row in $orgGrid.SelectedRows) {
+        $selectedRows += $row.Index
+    }
+    if ($selectedRows.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Select one or more rows first.", "No Selection", "OK", "Information")
+        return
+    }
+
+    $input = [Microsoft.VisualBasic.Interaction]::InputBox(
+        "Assign $($selectedRows.Count) selected file(s) to season number:",
+        "Batch Assign Season", "1")
+    if (-not $input) { return }
+    try { $newSeason = [int]$input } catch { return }
+
+    foreach ($idx in $selectedRows) {
+        if ($idx -lt $script:OrganizeFiles.Count) {
+            $script:OrganizeFiles[$idx].DetectedSeason = $newSeason
+            $script:OrganizeFiles[$idx].Status = "Detected"
+        }
+    }
+
+    Refresh-OrgGrid
+    $orgStatusLabel.Text = "$($selectedRows.Count) file(s) assigned to Season $newSeason"
+    Update-OrgButtonStates
+})
+
+# Header checkbox toggle for organize grid
+$orgGrid.Add_ColumnHeaderMouseClick({
+    if ($_.ColumnIndex -eq 0) {
+        $script:OrgHeaderCheck = -not $script:OrgHeaderCheck
+        foreach ($row in $orgGrid.Rows) { $row.Cells["OrgInclude"].Value = $script:OrgHeaderCheck }
+        for ($i = 0; $i -lt $script:OrganizeFiles.Count; $i++) {
+            $script:OrganizeFiles[$i].Excluded = -not $script:OrgHeaderCheck
+        }
+        $orgGrid.Columns[0].HeaderText = if ($script:OrgHeaderCheck) { [char]0x2611 } else { [char]0x2610 }
+        $orgGrid.RefreshEdit()
+    }
+})
+$script:OrgHeaderCheck = $true
+
+# Sync cell edits back to data
+$orgGrid.Add_CellEndEdit({
+    $rowIdx = $_.RowIndex
+    $colName = $orgGrid.Columns[$_.ColumnIndex].Name
+    if ($rowIdx -lt 0 -or $rowIdx -ge $script:OrganizeFiles.Count) { return }
+    $val = $orgGrid.Rows[$rowIdx].Cells[$colName].Value
+    switch ($colName) {
+        "OrgShow" { if ($val) { $script:OrganizeFiles[$rowIdx].DetectedShow = $val.ToString() } }
+        "OrgSeason" { if ($val -ne $null) { try { $script:OrganizeFiles[$rowIdx].DetectedSeason = [int]$val } catch {} } }
+        "OrgEpisode" { if ($val -ne $null) { try { $script:OrganizeFiles[$rowIdx].DetectedEpisode = [int]$val } catch {} } }
+    }
+})
+
+# Right-click context menu for organize grid
+$orgContextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+$orgMenuAssignSeason = $orgContextMenu.Items.Add("Assign Season...")
+$orgMenuAssignEpisode = $orgContextMenu.Items.Add("Assign Episode Number...")
+$orgMenuAssignShow = $orgContextMenu.Items.Add("Assign Show Name...")
+$orgContextMenu.Items.Add("-")  # separator
+$orgMenuRenameFolder = $orgContextMenu.Items.Add("Rename Show Folder (Plex Style)")
+$orgGrid.ContextMenuStrip = $orgContextMenu
+
+$orgMenuAssignSeason.Add_Click({
+    $selectedRows = @()
+    foreach ($row in $orgGrid.SelectedRows) { $selectedRows += $row.Index }
+    if ($selectedRows.Count -eq 0) { return }
+    $input = [Microsoft.VisualBasic.Interaction]::InputBox("Assign $($selectedRows.Count) file(s) to season:", "Assign Season", "1")
+    if (-not $input) { return }
+    try { $newSeason = [int]$input } catch { return }
+    foreach ($idx in $selectedRows) {
+        if ($idx -lt $script:OrganizeFiles.Count) {
+            $script:OrganizeFiles[$idx].DetectedSeason = $newSeason
+            $script:OrganizeFiles[$idx].Status = "Detected"
+        }
+    }
+    Refresh-OrgGrid
+    $orgStatusLabel.Text = "$($selectedRows.Count) file(s) assigned to Season $newSeason"
+})
+
+$orgMenuAssignEpisode.Add_Click({
+    $selectedRows = @($orgGrid.SelectedRows | ForEach-Object { $_.Index } | Sort-Object)
+    if ($selectedRows.Count -eq 0) { return }
+    $startEp = $script:OrganizeFiles[$selectedRows[0]].DetectedEpisode
+    if ($startEp -le 0) { $startEp = 1 }
+    $input = [Microsoft.VisualBasic.Interaction]::InputBox("Starting episode number for $($selectedRows.Count) file(s):`n(Will assign sequentially)", "Assign Episode", "$startEp")
+    if (-not $input) { return }
+    try { $epNum = [int]$input } catch { return }
+    foreach ($idx in $selectedRows) {
+        if ($idx -lt $script:OrganizeFiles.Count) {
+            $script:OrganizeFiles[$idx].DetectedEpisode = $epNum
+            $script:OrganizeFiles[$idx].Status = "Detected"
+            $script:OrganizeFiles[$idx].ParsedOk = $true
+            $epNum++
+        }
+    }
+    Refresh-OrgGrid
+    $orgStatusLabel.Text = "$($selectedRows.Count) file(s) assigned episode numbers"
+})
+
+$orgMenuAssignShow.Add_Click({
+    $selectedRows = @()
+    foreach ($row in $orgGrid.SelectedRows) { $selectedRows += $row.Index }
+    if ($selectedRows.Count -eq 0) { return }
+    $currentShow = $script:OrganizeFiles[$selectedRows[0]].DetectedShow
+    $input = [Microsoft.VisualBasic.Interaction]::InputBox("Show name for $($selectedRows.Count) file(s):", "Assign Show", $currentShow)
+    if (-not $input) { return }
+    foreach ($idx in $selectedRows) {
+        if ($idx -lt $script:OrganizeFiles.Count) {
+            $script:OrganizeFiles[$idx].DetectedShow = $input
+        }
+    }
+    Refresh-OrgGrid
+    $orgStatusLabel.Text = "$($selectedRows.Count) file(s) assigned to '$input'"
+})
+
+$orgMenuRenameFolder.Add_Click({
+    if (-not $script:OrgSelectedShowId -or -not $script:OrgSelectedShowName) {
+        [System.Windows.Forms.MessageBox]::Show("Fetch a Season Map first to get show info.", "No Show Selected", "OK", "Warning")
+        return
+    }
+    $destRoot = $txtOrgDest.Text
+    if (-not $destRoot) {
+        [System.Windows.Forms.MessageBox]::Show("Set a destination folder first.", "No Destination", "OK", "Warning")
+        return
+    }
+
+    # Find existing show folder
+    $showNames = $script:OrganizeFiles | Where-Object { $_.DetectedShow -ne "Unknown" } | Group-Object DetectedShow | Sort-Object Count -Descending
+    $currentShowName = if ($showNames.Count -gt 0) { $showNames[0].Name } else { $script:OrgSelectedShowName }
+    $existingPath = Join-Path $destRoot $currentShowName
+
+    $sourceTag = if ($script:OrgSelectedSource -eq "TVDB") { "tvdb" } else { "tmdb" }
+    $plexName = "$($script:OrgSelectedShowName) ($($script:OrgSelectedShowYear))" + " {$sourceTag-$($script:OrgSelectedShowId)}"
+    $newPath = Join-Path $destRoot $plexName
+
+    if (Test-Path $existingPath) {
+        $confirm = [System.Windows.Forms.MessageBox]::Show(
+            "Rename folder:`n`n$existingPath`n->`n$newPath`n`nProceed?",
+            "Rename Show Folder", "YesNo", "Question")
+        if ($confirm -eq "Yes") {
+            try {
+                Rename-Item -Path $existingPath -NewName $plexName -Force
+                [System.Windows.Forms.MessageBox]::Show("Folder renamed successfully!", "Done", "OK", "Information")
+                $orgStatusLabel.Text = "Folder renamed to Plex format"
+            } catch {
+                [System.Windows.Forms.MessageBox]::Show("Error: $($_.Exception.Message)", "Rename Failed", "OK", "Error")
+            }
+        }
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("Folder not found: $existingPath`n`nOrganize files first to create the folder, then rename.", "Folder Not Found", "OK", "Information")
     }
 })
 
