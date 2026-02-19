@@ -149,7 +149,17 @@ function Parse-ExistingFileName {
         return $result
     }
 
-    # Pattern 5: Show Name Episode 01
+    # Pattern 5: Show Name Season 2 Episode 3
+    if ($baseName -match '^(.+?)\s*[Ss]eason\s*(\d+)\s*[Ee]pisode\s*(\d+)\s*(.*)$') {
+        $result.ShowName = $Matches[1].Trim().TrimEnd('-', ' ')
+        $result.Season = [int]$Matches[2]
+        $result.Episode = [int]$Matches[3]
+        if ($Matches[4]) { $result.Title = Clean-FileName -Name $Matches[4] }
+        $result.ParsedOk = $true
+        return $result
+    }
+
+    # Pattern 6: Show Name Episode 01
     if ($baseName -match '^(.+?)\s*[Ee](?:p(?:isode)?)?\s*(\d+)\s*(.*)$') {
         $result.ShowName = $Matches[1].Trim()
         $result.Episode = [int]$Matches[2]
